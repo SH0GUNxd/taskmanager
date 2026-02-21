@@ -4,8 +4,6 @@
 
 **Date :** 21/02/2026
 
-**Cours :** Programmation orientée objet — TP noté
-
 ---
 
 ## Description
