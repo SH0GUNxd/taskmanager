@@ -1,6 +1,6 @@
 package taskmanager;
 
-// Lucas Mercier - LP Dev 2025
+// Félix Vandenbroucke - LP Dev 2026
 // Classe qui représente une tâche
 
 import java.time.LocalDate;

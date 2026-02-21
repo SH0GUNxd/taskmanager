@@ -1,7 +1,10 @@
 # Gestionnaire de Tâches — Java Console
 
 **Auteur :** Félix Vandenbroucke
+
 **Date :** 21/02/2026
+
+**Cours :** Programmation orientée objet — TP noté
 
 ---
 

@@ -1,6 +1,6 @@
 package taskmanager;
 
-// Lucas Mercier - LP Dev 2025
+// Félix Vandenbroucke - LP Dev 2026
 // Gère la liste des tâches + lecture/écriture du fichier JSON
 
 import java.io.IOException;
