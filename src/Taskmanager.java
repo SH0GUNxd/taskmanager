@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -115,7 +116,9 @@ public class TaskManager {
     }
 
     // Écrit toute la liste dans le fichier JSON
-    // Appelé après chaque modification pour ne rien perdre
+    // Écriture atomique : on écrit d'abord dans un fichier temporaire,
+    // puis on le déplace sur le fichier final. Ainsi, une coupure en cours
+    // d'écriture ne corrompt pas les données existantes.
     private void saveTasksToFile() {
         StringBuilder sb = new StringBuilder();
         sb.append("[\n");
@@ -130,15 +133,15 @@ public class TaskManager {
 
         sb.append("]");
 
+        Path tempFile = dataFilePath.resolveSibling(dataFilePath.getFileName() + ".tmp");
         try {
-            Files.writeString(
-                dataFilePath,
-                sb.toString(),
+            Files.writeString(tempFile, sb.toString(),
                 StandardOpenOption.CREATE,
-                StandardOpenOption.TRUNCATE_EXISTING
-            );
+                StandardOpenOption.TRUNCATE_EXISTING);
+            Files.move(tempFile, dataFilePath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException e) {
             System.err.println("[ERREUR] Sauvegarde impossible : " + e.getMessage());
+            try { Files.deleteIfExists(tempFile); } catch (IOException ignored) {}
         }
     }
 

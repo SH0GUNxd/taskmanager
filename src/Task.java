@@ -74,8 +74,14 @@ public class Task {
 
         for (String field : fields) {
             String[] keyValue = field.split(":", 2);
-            String key   = keyValue[0].replace("\"", "").trim();
-            String value = keyValue[1].replace("\"", "").trim();
+            // Key is always a plain JSON string - safe to strip quotes
+            String key = keyValue[0].replace("\"", "").trim();
+            // Value may be a quoted string (with escaped content) or a bare number
+            String raw = keyValue[1].trim();
+            // Strip exactly the outer quotes of a JSON string value, leaving inner content intact
+            String value = (raw.startsWith("\"") && raw.endsWith("\""))
+                ? raw.substring(1, raw.length() - 1)
+                : raw;
 
             switch (key) {
                 case "id"          -> id          = Integer.parseInt(value);
@@ -91,13 +97,11 @@ public class Task {
 
     // Ligne compacte pour le tableau (liste des tâches)
     public String toTableRow() {
-        String statusLabel;
-        switch (status) {
-            case TODO  -> statusLabel = "[ TODO  ]";
-            case DOING -> statusLabel = "[ DOING ]";
-            case DONE  -> statusLabel = "[ DONE  ]";
-            default    -> statusLabel = "[  ???  ]";
-        }
+        String statusLabel = switch (status) {
+            case TODO  -> "[ TODO  ]";
+            case DOING -> "[ DOING ]";
+            case DONE  -> "[ DONE  ]";
+        };
 
         return String.format("%-4d %s  %-30s  %-40s  %s",
             id,

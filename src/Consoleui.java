@@ -29,17 +29,18 @@ public class ConsoleUI {
     }
 
     public void run() {
-        printWelcomeBanner();
+        try (inputScanner) {
+            printWelcomeBanner();
 
-        boolean isRunning = true;
-        while (isRunning) {
-            printMainMenu();
-            String userChoice = readLine("Votre choix").trim();
-            isRunning = handleMenuChoice(userChoice);
+            boolean isRunning = true;
+            while (isRunning) {
+                printMainMenu();
+                String userChoice = readLine("Votre choix").trim();
+                isRunning = handleMenuChoice(userChoice);
+            }
+
+            System.out.println("\nAu revoir !");
         }
-
-        System.out.println("\nAu revoir !");
-        inputScanner.close();
     }
 
     private boolean handleMenuChoice(String choice) {
@@ -199,7 +200,7 @@ public class ConsoleUI {
     private void printWelcomeBanner() {
         System.out.println();
         System.out.println("  +==============================================+");
-        System.out.println("  |       GESTIONNAIRE DE TACHES  v1.0          |");
+        System.out.println("  |       GESTIONNAIRE DE TACHES  v1.0           |");
         System.out.println("  +==============================================+");
         System.out.println();
     }
