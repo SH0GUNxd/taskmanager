@@ -19,11 +19,14 @@ et rechargées automatiquement au démarrage.
 ```
 taskmanager/
 ├── src/
-│   └── ├──Main.java          point d'entrée, crée le manager et l'UI
-│       ├── Task.java          modèle de données + sérialisation JSON
-│       ├── TaskManager.java   logique CRUD + lecture/écriture fichier
-│       └── ConsoleUI.java     interface console (menus, saisies)
+│   ├── Main.java              point d'entrée, crée le manager et l'UI
+│   ├── Task.java              modèle de données + sérialisation JSON
+│   ├── TaskManager.java       logique CRUD + lecture/écriture fichier
+│   ├── ConsoleUI.java         interface console (menus, saisies)
+│   └── TaskManagerTest.java   tests autonomes (sans dépendance externe)
+├── out/                       classes compilées (généré, ignoré par git)
 ├── tasks.json                 fichier de sauvegarde (créé automatiquement)
+├── .gitignore
 └── README.md
 ```
 
@@ -33,6 +36,7 @@ taskmanager/
 - **TaskManager** : gère la liste en mémoire et la synchronise avec le fichier
 - **ConsoleUI** : affiche les menus et lit les saisies, délègue à TaskManager
 - **Main** : crée les objets et lance la boucle principale
+- **TaskManagerTest** : suite de tests autonomes (45 assertions, pas de JUnit)
 
 ---
 
@@ -57,7 +61,7 @@ Depuis la racine du projet (le dossier qui contient `src/`) :
 mkdir -p out
 
 # 2. Compiler tous les fichiers .java
-javac -d out src/taskmanager/Main.java src/taskmanager/Task.java src/taskmanager/TaskManager.java src/taskmanager/ConsoleUI.java
+javac -d out src/Main.java src/Task.java src/TaskManager.java src/ConsoleUI.java
 ```
 
 Si la commande réussit, vous ne verrez aucun message d'erreur et le dossier `out/` contiendra les `.class`.
@@ -81,6 +85,19 @@ java -cp out taskmanager.Main mon_fichier.json
 jar --create --file TaskManager.jar --main-class taskmanager.Main -C out .
 java -jar TaskManager.jar
 ```
+
+---
+
+## Tests
+
+Compiler et lancer la suite de tests :
+
+```bash
+javac -d out src/Main.java src/Task.java src/TaskManager.java src/ConsoleUI.java src/TaskManagerTest.java
+java -cp out taskmanager.TaskManagerTest
+```
+
+Retourne un code de sortie 0 si tous les tests passent, 1 sinon (compatible CI).
 
 ---
 
@@ -134,35 +151,11 @@ java -jar TaskManager.jar
   ID    STATUT      TITRE                           DESCRIPTION                               ECHEANCE
   -----------------------------------------------------------------------------------------------
   1     [ DONE  ]   Configurer l'environnement      Installer JDK 21 et configurer PATH       28/02/2025
-  2     [ DOING ]   Écrire les tests unitaires       Couvrir Task et TaskManager avec JUnit    10/03/2025
+  2     [ DOING ]   Écrire les tests unitaires      Couvrir Task et TaskManager avec JUnit    10/03/2025
   3     [ TODO  ]   Rédiger la documentation        Compléter le README et les Javadoc        15/03/2025
-  4     [ TODO  ]   Préparer la présentation         Slides pour la soutenance du TP           15/03/2025
+  4     [ TODO  ]   Préparer la présentation        Slides pour la soutenance du TP           15/03/2025
   -----------------------------------------------------------------------------------------------
   4 tache(s) affichee(s)
-
-  > Votre choix : 3
-
-  --- MODIFIER UNE TACHE ---
-
-  > ID de la tache a modifier : 2
-  Laissez un champ vide pour le conserver tel quel.
-
-  > Nouveau titre       [actuel : Écrire les tests unitaires] :
-  > Nouvelle description [actuel : Couvrir Task et TaskManager avec JUnit] :
-  > Nouvelle echeance   [actuel : 10/03/2025] (dd/MM/yyyy) :
-  > Nouveau statut      [actuel : DOING] (TODO/DOING/DONE) : DONE
-
-  Tache #2 mise a jour.
-
-  > Votre choix : 5
-
-  --- STATISTIQUES ---
-
-  TODO       : 2 tache(s)
-  DOING      : 0 tache(s)
-  DONE       : 2 tache(s)
-  -------------------------
-  Total      : 4 tache(s)
 
   > Votre choix : 0
 
@@ -174,6 +167,8 @@ Au revoir !
 ## Format du fichier `tasks.json`
 
 Le fichier est mis à jour automatiquement après chaque ajout, modification ou suppression.
+L'écriture est atomique : un fichier temporaire est écrit puis déplacé sur le fichier final,
+ce qui évite toute perte de données en cas de coupure.
 
 ```json
 [
