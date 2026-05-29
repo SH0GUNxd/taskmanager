@@ -1,4 +1,4 @@
-# Gestionnaire de Tâches — Java Console
+# Gestionnaire de Tâches - Java Console
 
 **Auteur :** Félix Vandenbroucke
 
@@ -88,9 +88,7 @@ java -jar TaskManager.jar
 ## Exemple de session
 
 ```
-  +==============================================+
-  |       GESTIONNAIRE DE TACHES  v1.0          |
-  +==============================================+
+         GESTIONNAIRE DE TACHES  v1.0
 
 [INFO] 3 tache(s) chargee(s) depuis tasks.json
 
