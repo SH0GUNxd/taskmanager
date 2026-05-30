@@ -377,7 +377,7 @@ public class TaskManagerTest {
         String row = t.toTableRow();
 
         // Le titre est tronqué à 30 chars (27 + "...")
-        assertTrue("titre tronqué dans la ligne", row.contains("AAAAAAAAAAAAAAAAAAAAAAAAAAAA..."));
+        assertTrue("titre tronqué dans la ligne", row.contains("AAAAAAAAAAAAAAAAAAAAAAAAAAA..."));
         // La description est tronquée à 40 chars (37 + "...")
         assertTrue("description tronquée dans la ligne", row.contains("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB..."));
     }
