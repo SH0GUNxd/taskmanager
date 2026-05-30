@@ -22,7 +22,8 @@ taskmanager/
 │   ├── Main.java              point d'entrée, crée le manager et l'UI
 │   ├── Task.java              modèle de données + sérialisation JSON
 │   ├── TaskManager.java       logique CRUD + lecture/écriture fichier
-│   ├── ConsoleUI.java         interface console (menus, saisies)
+│   └── ConsoleUI.java         interface console (menus, saisies)
+├── tests/
 │   └── TaskManagerTest.java   tests autonomes (sans dépendance externe)
 ├── out/                       classes compilées (généré, ignoré par git)
 ├── tasks.json                 fichier de sauvegarde (créé automatiquement)
@@ -36,7 +37,7 @@ taskmanager/
 - **TaskManager** : gère la liste en mémoire et la synchronise avec le fichier
 - **ConsoleUI** : affiche les menus et lit les saisies, délègue à TaskManager
 - **Main** : crée les objets et lance la boucle principale
-- **TaskManagerTest** : suite de tests autonomes (45 assertions, pas de JUnit)
+- **TaskManagerTest** : suite de tests autonomes (102 assertions, pas de JUnit)
 
 ---
 
@@ -90,10 +91,16 @@ java -jar TaskManager.jar
 
 ## Tests
 
-Compiler et lancer la suite de tests :
+Les tests sont dans `tests/` et compilés séparément (ils dépendent des `.class` dans `out/`).
 
 ```bash
-javac -d out src/Main.java src/Task.java src/TaskManager.java src/ConsoleUI.java src/TaskManagerTest.java
+# 1. Compiler les sources si ce n'est pas déjà fait
+javac -d out src/Main.java src/Task.java src/TaskManager.java src/ConsoleUI.java
+
+# 2. Compiler les tests
+javac -cp out -d out tests/TaskManagerTest.java
+
+# 3. Lancer
 java -cp out taskmanager.TaskManagerTest
 ```
 
