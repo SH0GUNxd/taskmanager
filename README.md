@@ -1,4 +1,4 @@
-# Gestionnaire de Tâches - Java Console
+# Gestionnaire de Tâches - Java Console & Web
 
 **Auteur :** Félix Vandenbroucke
 
@@ -8,9 +8,9 @@
 
 ## Description
 
-Application console en Java pour gérer une liste de tâches.
-Les tâches sont sauvegardées dans un fichier JSON (`tasks.json`)
-et rechargées automatiquement au démarrage.
+Application de gestion de tâches en Java.
+Deux modes de lancement : **console** (terminal interactif) et **web** (interface dark mode dans le navigateur).
+Les tâches sont sauvegardées dans un fichier JSON (`tasks.json`) et rechargées automatiquement au démarrage.
 
 ---
 
@@ -19,12 +19,15 @@ et rechargées automatiquement au démarrage.
 ```
 taskmanager/
 ├── src/
-│   ├── Main.java              point d'entrée, crée le manager et l'UI
+│   ├── Main.java              point d'entrée — gère les modes console et web
 │   ├── Task.java              modèle de données + sérialisation JSON
 │   ├── TaskManager.java       logique CRUD + lecture/écriture fichier
-│   └── ConsoleUI.java         interface console (menus, saisies)
+│   ├── ConsoleUI.java         interface console (menus, saisies)
+│   └── ApiServer.java         serveur HTTP REST (JDK built-in, zéro dépendance)
 ├── tests/
-│   └── TaskManagerTest.java   tests autonomes (sans dépendance externe)
+│   └── TaskManagerTest.java   tests autonomes (102 assertions, pas de JUnit)
+├── web/
+│   └── index.html             frontend dark mode (HTML/CSS/JS, zéro framework)
 ├── out/                       classes compilées (généré, ignoré par git)
 ├── tasks.json                 fichier de sauvegarde (créé automatiquement)
 ├── .gitignore
@@ -36,8 +39,8 @@ taskmanager/
 - **Task** : contient les données d'une tâche et sait se convertir en JSON
 - **TaskManager** : gère la liste en mémoire et la synchronise avec le fichier
 - **ConsoleUI** : affiche les menus et lit les saisies, délègue à TaskManager
-- **Main** : crée les objets et lance la boucle principale
-- **TaskManagerTest** : suite de tests autonomes (102 assertions, pas de JUnit)
+- **ApiServer** : serveur HTTP REST basé sur `com.sun.net.httpserver` (inclus dans le JDK)
+- **Main** : crée les objets et lance le mode choisi
 
 ---
 
@@ -55,119 +58,104 @@ javac -version
 
 ## Compilation
 
-Depuis la racine du projet (le dossier qui contient `src/`) :
+Depuis la racine du projet :
 
 ```bash
-# 1. Créer le dossier de destination
 mkdir -p out
-
-# 2. Compiler tous les fichiers .java
-javac -d out src/Main.java src/Task.java src/TaskManager.java src/ConsoleUI.java
+javac -d out src/Main.java src/Task.java src/TaskManager.java src/ConsoleUI.java src/ApiServer.java
 ```
-
-Si la commande réussit, vous ne verrez aucun message d'erreur et le dossier `out/` contiendra les `.class`.
 
 ---
 
 ## Lancement
 
+### Mode console
+
 ```bash
 java -cp out taskmanager.Main
 ```
 
-Pour utiliser un fichier de sauvegarde différent :
+### Mode web
+
 ```bash
-java -cp out taskmanager.Main mon_fichier.json
+java -cp out taskmanager.Main --web
+```
+
+Puis ouvrir **http://localhost:8080** dans le navigateur.
+
+Port personnalisé :
+```bash
+java -cp out taskmanager.Main --web 3000
+```
+
+Fichier de sauvegarde personnalisé :
+```bash
+java -cp out taskmanager.Main --web mon_fichier.json
 ```
 
 ### Créer un JAR (optionnel)
 
 ```bash
 jar --create --file TaskManager.jar --main-class taskmanager.Main -C out .
-java -jar TaskManager.jar
+java -jar TaskManager.jar --web
 ```
+
+---
+
+## API REST
+
+Le serveur expose les endpoints suivants :
+
+| Méthode  | Endpoint              | Description                              |
+|----------|-----------------------|------------------------------------------|
+| `GET`    | `/api/tasks`          | Liste toutes les tâches                  |
+| `GET`    | `/api/tasks?status=TODO` | Filtre par statut (TODO/DOING/DONE)   |
+| `POST`   | `/api/tasks`          | Crée une tâche                           |
+| `PUT`    | `/api/tasks/{id}`     | Modifie une tâche (champs partiels OK)   |
+| `DELETE` | `/api/tasks/{id}`     | Supprime une tâche                       |
+| `GET`    | `/api/stats`          | Statistiques par statut                  |
+| `GET`    | `/`                   | Sert le frontend (`web/index.html`)      |
+
+Corps JSON pour POST/PUT :
+```json
+{
+  "title": "Nom de la tâche",
+  "description": "Détails optionnels",
+  "dueDate": "2026-06-15",
+  "status": "TODO"
+}
+```
+
+---
+
+## Interface web
+
+Fonctionnalités du frontend :
+
+- **Stats** en temps réel (total, todo, doing, done)
+- **Filtres** par statut + **recherche** live
+- **Drag & drop** pour réordonner les tâches
+- **Badge RETARD** automatique si la date d'échéance est dépassée
+- **Modal** créer/éditer avec raccourcis clavier (`n` pour ouvrir, `Ctrl+Enter` pour valider, `Échap` pour fermer)
+- **Toasts** de confirmation pour chaque action
+- Zéro dépendance JS externe
 
 ---
 
 ## Tests
 
-Les tests sont dans `tests/` et compilés séparément (ils dépendent des `.class` dans `out/`).
-
 ```bash
-# 1. Compiler les sources si ce n'est pas déjà fait
-javac -d out src/Main.java src/Task.java src/TaskManager.java src/ConsoleUI.java
+# Compiler les sources si ce n'est pas déjà fait
+javac -d out src/Main.java src/Task.java src/TaskManager.java src/ConsoleUI.java src/ApiServer.java
 
-# 2. Compiler les tests
+# Compiler les tests
 javac -cp out -d out tests/TaskManagerTest.java
 
-# 3. Lancer
+# Lancer
 java -cp out taskmanager.TaskManagerTest
 ```
 
 Retourne un code de sortie 0 si tous les tests passent, 1 sinon (compatible CI).
-
----
-
-## Exemple de session
-
-```
-         GESTIONNAIRE DE TACHES  v1.0
-
-[INFO] 3 tache(s) chargee(s) depuis tasks.json
-
-  ------------------------------------------------------------
-  MENU PRINCIPAL
-  ------------------------------------------------------------
-  [1] Ajouter une tache
-  [2] Lister les taches
-  [3] Modifier une tache
-  [4] Supprimer une tache
-  [5] Statistiques
-  [0] Quitter
-  ------------------------------------------------------------
-  > Votre choix : 1
-
-  --- AJOUTER UNE TACHE ---
-
-  > Titre : Préparer la présentation
-  > Description (facultative, Entree pour ignorer) : Slides pour la soutenance du TP
-  > Date d'echeance (format : dd/MM/yyyy) : 15/03/2025
-  > Statut (TODO / DOING / DONE) [defaut : TODO] :
-
-  Tache ajoutee avec succes :
-  +------------------------------------------+
-  |  ID          : 4
-  |  Titre       : Préparer la présentation
-  |  Description : Slides pour la soutenance du TP
-  |  Echeance    : 15/03/2025
-  |  Statut      : TODO
-  +------------------------------------------+
-
-  > Votre choix : 2
-
-  --- LISTE DES TACHES ---
-
-  Filtrer par statut :
-  [1] Toutes les taches
-  [2] TODO seulement
-  [3] DOING seulement
-  [4] DONE seulement
-  > Filtre : 1
-
-  -----------------------------------------------------------------------------------------------
-  ID    STATUT      TITRE                           DESCRIPTION                               ECHEANCE
-  -----------------------------------------------------------------------------------------------
-  1     [ DONE  ]   Configurer l'environnement      Installer JDK 21 et configurer PATH       28/02/2025
-  2     [ DOING ]   Écrire les tests unitaires      Couvrir Task et TaskManager avec JUnit    10/03/2025
-  3     [ TODO  ]   Rédiger la documentation        Compléter le README et les Javadoc        15/03/2025
-  4     [ TODO  ]   Préparer la présentation        Slides pour la soutenance du TP           15/03/2025
-  -----------------------------------------------------------------------------------------------
-  4 tache(s) affichee(s)
-
-  > Votre choix : 0
-
-Au revoir !
-```
 
 ---
 
@@ -188,4 +176,4 @@ ce qui évite toute perte de données en cas de coupure.
 Chaque objet JSON contient : `id`, `title`, `description`, `dueDate` (format ISO : AAAA-MM-JJ), `status`.
 
 > **Note** : la date est stockée au format ISO (AAAA-MM-JJ) dans le fichier pour faciliter le parsing,
-> mais affichée au format français (JJ/MM/AAAA) dans le terminal.
+> mais affichée au format français (JJ/MM/AAAA) dans le terminal et sur l'interface web.
