@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
 <style>
-/* Reset & tokens */
+/* ─── Reset & tokens ───────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -41,7 +41,7 @@ body {
   overflow-x: hidden;
 }
 
-/* Layout */
+/* ─── Layout ────────────────────────────────────────────────────────────── */
 .shell {
   display: grid;
   grid-template-columns: 220px 1fr;
@@ -49,7 +49,7 @@ body {
   height: 100vh;
 }
 
-/* Topbar */
+/* ─── Topbar ────────────────────────────────────────────────────────────── */
 .topbar {
   grid-column: 1 / -1;
   background: var(--surface);
@@ -97,7 +97,7 @@ body {
 .btn-danger { background: var(--red-dim); color: var(--red); border: 1px solid #4a1a1a; }
 .btn-danger:hover { opacity: .85; }
 
-/* Sidebar */
+/* ─── Sidebar ───────────────────────────────────────────────────────────── */
 .sidebar {
   background: var(--surface);
   border-right: 1px solid var(--border);
@@ -171,7 +171,7 @@ body {
   transition: width .6s cubic-bezier(.4,0,.2,1);
 }
 
-/* Main */
+/* ─── Main ──────────────────────────────────────────────────────────────── */
 .main {
   overflow-y: auto;
   padding: 24px;
@@ -493,6 +493,9 @@ body {
 .pill-doing   { background: var(--amber-dim);  color: var(--amber);  }
 .pill-done    { background: var(--green-dim);  color: var(--green);  }
 .pill-overdue { background: var(--red-dim);    color: var(--red);    }
+.pill-low    { background: var(--surface2);   color: var(--text3);  }
+.pill-medium { background: #1a1f35;           color: #7b85c4;       }
+.pill-high   { background: #2a1020;           color: #e07ba0;       }
 
 .task-date {
   font-family: var(--mono);
@@ -503,7 +506,8 @@ body {
   gap: 4px;
 }
 .task-date svg { width: 11px; height: 11px; }
-.task-date.overdue { color: var(--red); }
+.task-date.overdue  { color: var(--red);   }
+.task-date.warning  { color: var(--amber); }
 
 .task-desc {
   font-size: 12px;
@@ -554,7 +558,7 @@ body {
 }
 .empty-state p { font-size: 14px; }
 
-/* Modal */
+/* ─── Modal ─────────────────────────────────────────────────────────────── */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -688,6 +692,10 @@ body {
   <header class="topbar">
     <div class="logo">task<em>mgr</em></div>
     <div class="topbar-right">
+      <button class="btn btn-ghost" onclick="exportCsv()" title="Exporter en CSV">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export CSV
+      </button>
       <button class="btn btn-primary" onclick="openModal()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Nouvelle tâche
@@ -846,6 +854,14 @@ body {
         </select>
       </div>
     </div>
+    <div class="field">
+      <label>Priorité</label>
+      <select id="f-priority">
+        <option value="LOW">LOW — faible</option>
+        <option value="MEDIUM" selected>MEDIUM — normale</option>
+        <option value="HIGH">HIGH — urgente</option>
+      </select>
+    </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal()">Annuler</button>
       <button class="btn btn-primary" onclick="submitTask()">Enregistrer</button>
@@ -968,7 +984,10 @@ function renderTasks() {
     const pill = overdue
       ? `<span class="pill pill-overdue">RETARD</span>`
       : `<span class="pill pill-${t.status.toLowerCase()}">${t.status}</span>`;
-    const dateClass = overdue ? 'task-date overdue' : 'task-date';
+    const todayStr  = today();
+    const daysUntil = t.dueDate ? Math.ceil((new Date(t.dueDate) - new Date(todayStr)) / 86400000) : 999;
+    const dateClass = overdue ? 'task-date overdue' : daysUntil <= 3 ? 'task-date warning' : 'task-date';
+    const priorityPill = t.priority ? `<span class="pill pill-${t.priority.toLowerCase()}">${t.priority}</span>` : '';
     const dateStr   = t.dueDate ? formatDate(t.dueDate) : '—';
 
     return `
@@ -994,6 +1013,7 @@ function renderTasks() {
         ${t.description ? `<div class="task-desc">${escHtml(t.description)}</div>` : ''}
         <div class="task-meta">
           ${pill}
+          ${priorityPill}
           <span class="${dateClass}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             ${dateStr}
@@ -1061,12 +1081,14 @@ function openModal(id = null) {
     document.getElementById('f-title').value  = t.title;
     document.getElementById('f-desc').value   = t.description || '';
     document.getElementById('f-date').value   = t.dueDate || '';
-    document.getElementById('f-status').value = t.status;
+    document.getElementById('f-status').value   = t.status;
+    document.getElementById('f-priority').value = t.priority || 'MEDIUM';
   } else {
     document.getElementById('f-title').value  = '';
     document.getElementById('f-desc').value   = '';
     document.getElementById('f-date').value   = tomorrow();
-    document.getElementById('f-status').value = 'TODO';
+    document.getElementById('f-status').value   = 'TODO';
+    document.getElementById('f-priority').value = 'MEDIUM';
   }
   overlay.classList.add('open');
   setTimeout(() => document.getElementById('f-title').focus(), 150);
@@ -1093,7 +1115,8 @@ async function submitTask() {
     return;
   }
 
-  const body = JSON.stringify({ title, description: desc, dueDate: date, status });
+  const priority = document.getElementById('f-priority').value;
+  const body = JSON.stringify({ title, description: desc, dueDate: date, status, priority });
 
   try {
     if (editingId) {
@@ -1207,6 +1230,15 @@ function formatDate(iso) {
 function tomorrow() {
   const d = new Date(); d.setDate(d.getDate() + 1);
   return d.toISOString().slice(0, 10);
+}
+
+// Export CSV
+function exportCsv() {
+  const a = document.createElement('a');
+  a.href     = '/api/export';
+  a.download = 'tasks.csv';
+  a.click();
+  toast('Export CSV été téléchargé', 'green');
 }
 
 // View toggle
