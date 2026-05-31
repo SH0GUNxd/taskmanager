@@ -25,7 +25,8 @@ taskmanager/
 │   ├── ConsoleUI.java         interface console (menus, saisies)
 │   └── ApiServer.java         serveur HTTP REST (JDK built-in, zéro dépendance)
 ├── tests/
-│   └── TaskManagerTest.java   tests autonomes (102 assertions, pas de JUnit)
+│   ├── TaskManagerTest.java   tests unitaires logique métier (102 assertions)
+│   └── ApiServerTest.java     tests d'intégration API HTTP (69 assertions)
 ├── web/
 │   └── index.html             frontend dark mode (HTML/CSS/JS, zéro framework)
 ├── out/                       classes compilées (généré, ignoré par git)
@@ -62,7 +63,7 @@ Depuis la racine du projet :
 
 ```bash
 mkdir -p out
-javac -d out src/Main.java src/Task.java src/TaskManager.java src/ConsoleUI.java src/ApiServer.java
+javac -d out src/Task.java src/TaskManager.java src/ConsoleUI.java src/ApiServer.java src/Main.java
 ```
 
 ---
@@ -106,15 +107,15 @@ java -jar TaskManager.jar --web
 
 Le serveur expose les endpoints suivants :
 
-| Méthode  | Endpoint              | Description                              |
-|----------|-----------------------|------------------------------------------|
-| `GET`    | `/api/tasks`          | Liste toutes les tâches                  |
-| `GET`    | `/api/tasks?status=TODO` | Filtre par statut (TODO/DOING/DONE)   |
-| `POST`   | `/api/tasks`          | Crée une tâche                           |
-| `PUT`    | `/api/tasks/{id}`     | Modifie une tâche (champs partiels OK)   |
-| `DELETE` | `/api/tasks/{id}`     | Supprime une tâche                       |
-| `GET`    | `/api/stats`          | Statistiques par statut                  |
-| `GET`    | `/`                   | Sert le frontend (`web/index.html`)      |
+| Méthode  | Endpoint                    | Description                            |
+|----------|-----------------------------|----------------------------------------|
+| `GET`    | `/api/tasks`                | Liste toutes les tâches                |
+| `GET`    | `/api/tasks?status=TODO`    | Filtre par statut (TODO/DOING/DONE)    |
+| `POST`   | `/api/tasks`                | Crée une tâche                         |
+| `PUT`    | `/api/tasks/{id}`           | Modifie une tâche (champs partiels OK) |
+| `DELETE` | `/api/tasks/{id}`           | Supprime une tâche                     |
+| `GET`    | `/api/stats`                | Statistiques par statut                |
+| `GET`    | `/`                         | Sert le frontend (`web/index.html`)    |
 
 Corps JSON pour POST/PUT :
 ```json
@@ -144,15 +145,33 @@ Fonctionnalités du frontend :
 
 ## Tests
 
+**171 assertions au total, zéro dépendance externe.**
+
+### Tests unitaires - logique métier (102 assertions)
+
+Couvrent `Task` et `TaskManager` : sérialisation JSON, CRUD, persistence, caractères spéciaux, cas limites.
+
 ```bash
-# Compiler les sources si ce n'est pas déjà fait
-javac -d out src/Main.java src/Task.java src/TaskManager.java src/ConsoleUI.java src/ApiServer.java
-
-# Compiler les tests
 javac -cp out -d out tests/TaskManagerTest.java
-
-# Lancer
 java -cp out taskmanager.TaskManagerTest
+```
+
+### Tests d'intégration - API HTTP (69 assertions)
+
+Démarrent un vrai serveur HTTP sur un port libre et envoient de vraies requêtes HTTP.
+Couvrent tous les endpoints REST, CORS, codes d'erreur, et des scénarios end-to-end.
+
+```bash
+javac -cp out -d out tests/ApiServerTest.java
+java -cp out taskmanager.ApiServerTest
+```
+
+### Lancer tous les tests
+
+```bash
+javac -d out src/Task.java src/TaskManager.java src/ConsoleUI.java src/ApiServer.java src/Main.java
+javac -cp out -d out tests/TaskManagerTest.java tests/ApiServerTest.java
+java -cp out taskmanager.TaskManagerTest && java -cp out taskmanager.ApiServerTest
 ```
 
 Retourne un code de sortie 0 si tous les tests passent, 1 sinon (compatible CI).
