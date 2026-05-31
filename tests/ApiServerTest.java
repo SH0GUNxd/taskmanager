@@ -30,7 +30,7 @@ public class ApiServerTest {
     }
 
     private static void fail(String name, String reason) {
-        System.out.printf("  [FAIL] %s — %s%n", name, reason);
+        System.out.printf("  [FAIL] %s - %s%n", name, reason);
         failed++;
     }
 
@@ -465,6 +465,102 @@ public class ApiServerTest {
         assertEquals("total stats == nb tâches dans liste", statTotal, countInList);
     }
 
+
+    // Tests Priority via API
+    
+    static void testPostTaskWithPriorityHigh() throws Exception {
+        section("POST /api/tasks - priorité HIGH");
+        var r = post("/api/tasks",
+            "{\"title\":\"Urgent\",\"dueDate\":\"2026-01-01\",\"status\":\"TODO\",\"priority\":\"HIGH\"}");
+        assertEquals("status 201", 201, r.statusCode());
+        assertContains("priority HIGH dans réponse", r.body(), "HIGH");
+    }
+
+    static void testPostTaskWithPriorityLow() throws Exception {
+        section("POST /api/tasks - priorité LOW");
+        var r = post("/api/tasks",
+            "{\"title\":\"Optional\",\"dueDate\":\"2026-01-01\",\"status\":\"TODO\",\"priority\":\"LOW\"}");
+        assertEquals("status 201", 201, r.statusCode());
+        assertContains("priority LOW dans réponse", r.body(), "LOW");
+    }
+
+    static void testPostTaskDefaultPriority() throws Exception {
+        section("POST /api/tasks - sans priorité → MEDIUM");
+        var r = post("/api/tasks",
+            "{\"title\":\"Default prio\",\"dueDate\":\"2026-01-01\",\"status\":\"TODO\"}");
+        assertEquals("status 201", 201, r.statusCode());
+        assertContains("MEDIUM par défaut", r.body(), "MEDIUM");
+    }
+
+    static void testPutTaskPriorityOnly() throws Exception {
+        section("PUT /api/tasks/{id} - modifier priorité seulement");
+        var created = post("/api/tasks",
+            "{\"title\":\"PrioTest\",\"dueDate\":\"2026-01-01\",\"status\":\"TODO\",\"priority\":\"LOW\"}");
+        int id = extractId(created.body());
+
+        var r = put("/api/tasks/" + id, "{\"priority\":\"HIGH\"}");
+        assertEquals("status 200",      200, r.statusCode());
+        assertContains("priorité HIGH", r.body(), "HIGH");
+        assertContains("titre conservé", r.body(), "PrioTest");
+    }
+
+    static void testPriorityInGetTasks() throws Exception {
+        section("GET /api/tasks - priority présent dans chaque tâche");
+        var r = get("/api/tasks");
+        assertEquals("status 200", 200, r.statusCode());
+        if (!r.body().equals("[]")) {
+            assertContains("champ priority présent", r.body(), "\"priority\"");
+        }
+    }
+
+    // Tests GET /api/export
+    
+    static void testExportCsvStatus() throws Exception {
+        section("GET /api/export - status 200");
+        var r = get("/api/export");
+        assertEquals("status 200", 200, r.statusCode());
+    }
+
+    static void testExportCsvContentType() throws Exception {
+        section("GET /api/export - Content-Type text/csv");
+        var r = get("/api/export");
+        String ct = r.headers().firstValue("Content-Type").orElse("");
+        assertContains("Content-Type csv", ct, "text/csv");
+    }
+
+    static void testExportCsvHeader() throws Exception {
+        section("GET /api/export - en-tête CSV correct");
+        var r = get("/api/export");
+        assertTrue("CSV commence par en-tête",
+            r.body().startsWith("id,title,description,dueDate,status,priority"));
+    }
+
+    static void testExportCsvContainsTasks() throws Exception {
+        section("GET /api/export - tâches présentes dans le CSV");
+        post("/api/tasks",
+            "{\"title\":\"CSV export task\",\"dueDate\":\"2026-06-01\",\"status\":\"TODO\",\"priority\":\"HIGH\"}");
+
+        var r = get("/api/export");
+        assertContains("titre dans CSV",    r.body(), "CSV export task");
+        assertContains("statut dans CSV",   r.body(), "TODO");
+        assertContains("priorité dans CSV", r.body(), "HIGH");
+    }
+
+    static void testExportCsvCommaInTitle() throws Exception {
+        section("GET /api/export - virgule dans titre → guillemets CSV");
+        post("/api/tasks",
+            "{\"title\":\"Titre, avec virgule\",\"dueDate\":\"2026-01-01\",\"status\":\"TODO\",\"priority\":\"LOW\"}");
+
+        var r = get("/api/export");
+        assertContains("virgule entre guillemets", r.body(), "\"Titre, avec virgule\"");
+    }
+
+    static void testExportCsvMethodNotAllowed() throws Exception {
+        section("POST /api/export → 405");
+        var r = post("/api/export", "{}");
+        assertEquals("status 405", 405, r.statusCode());
+    }
+
     // Helpers
     
     private static int extractId(String json) {
@@ -496,7 +592,7 @@ public class ApiServerTest {
     
     public static void main(String[] args) throws Exception {
         System.out.println("\n  ========================================");
-        System.out.println("  APISERVER — TESTS D'INTÉGRATION");
+        System.out.println("  APISERVER - TESTS D'INTÉGRATION");
         System.out.println("  ========================================");
 
         startServer();
@@ -551,6 +647,22 @@ public class ApiServerTest {
             testFullCrudCycle();
             testMultipleTasksOrdering();
             testStatsConsistency();
+
+
+            // Tests Priority
+            testPostTaskWithPriorityHigh();
+            testPostTaskWithPriorityLow();
+            testPostTaskDefaultPriority();
+            testPutTaskPriorityOnly();
+            testPriorityInGetTasks();
+
+            // Tests Export CSV
+            testExportCsvStatus();
+            testExportCsvContentType();
+            testExportCsvHeader();
+            testExportCsvContainsTasks();
+            testExportCsvCommaInTitle();
+            testExportCsvMethodNotAllowed();
 
         } finally {
             stopServer();

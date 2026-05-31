@@ -2,7 +2,7 @@
 
 **Auteur :** Félix Vandenbroucke · LP Dev 2026
 
-Application de gestion de tâches construite en Java pur, sans framework ni dépendance externe. Deux modes : **terminal interactif** et **interface web dark mode** avec API REST. Persistence JSON avec écriture atomique, 171 tests, CI GitHub Actions.
+Application de gestion de tâches construite en Java pur, sans framework ni dépendance externe. Deux modes : **terminal interactif** et **interface web dark mode** avec API REST. Persistence JSON avec écriture atomique, 217 tests, CI GitHub Actions.
 
 ![Screenshot de l'interface web](assets/welcome.png)
 
@@ -44,8 +44,8 @@ taskmanager/
 │   ├── ConsoleUI.java         interface terminal
 │   └── ApiServer.java         serveur HTTP REST, zéro dépendance
 ├── tests/
-│   ├── TaskManagerTest.java   102 assertions - logique métier
-│   └── ApiServerTest.java      69 assertions - intégration HTTP
+│   ├── TaskManagerTest.java   129 assertions - logique métier
+│   └── ApiServerTest.java      88 assertions - intégration HTTP
 ├── web/
 │   └── index.html             frontend single-file (HTML + CSS + JS)
 ├── assets/
@@ -131,7 +131,7 @@ Corps JSON pour POST / PUT :
 
 ## Tests
 
-**171 assertions, zéro dépendance externe.**
+**217 assertions, zéro dépendance externe.**
 
 ```bash
 # Tout lancer

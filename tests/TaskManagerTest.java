@@ -639,6 +639,195 @@ public class TaskManagerTest {
         Files.deleteIfExists(f);
     }
 
+
+    // Tests Priority
+    
+    static void testParsePriorityValidValues() {
+        section("Priority - parsePriority valeurs valides");
+
+        assertEquals("LOW",    Task.Priority.LOW,    Task.Priority.parsePriority("LOW"));
+        assertEquals("MEDIUM", Task.Priority.MEDIUM, Task.Priority.parsePriority("MEDIUM"));
+        assertEquals("HIGH",   Task.Priority.HIGH,   Task.Priority.parsePriority("HIGH"));
+    }
+
+    static void testParsePriorityIgnoresCase() {
+        section("Priority - insensible à la casse");
+
+        assertEquals("low",    Task.Priority.LOW,    Task.Priority.parsePriority("low"));
+        assertEquals("Medium", Task.Priority.MEDIUM, Task.Priority.parsePriority("Medium"));
+        assertEquals("HIGH",   Task.Priority.HIGH,   Task.Priority.parsePriority("HIGH"));
+    }
+
+    static void testParsePriorityInvalid() {
+        section("Priority - valeur invalide lève exception");
+
+        try {
+            Task.Priority.parsePriority("URGENT");
+            fail("priorité invalide lève exception", "aucune exception levée");
+        } catch (IllegalArgumentException e) {
+            ok("parsePriority invalide lève IllegalArgumentException");
+        }
+    }
+
+    static void testJsonRoundtripWithPriority() {
+        section("Priority - roundtrip JSON toutes les priorités");
+
+        for (Task.Priority p : Task.Priority.values()) {
+            Task t = new Task(1, "T", "D", java.time.LocalDate.now(), Task.Status.TODO, p);
+            Task restored = Task.fromJson(t.toJson());
+            assertEquals("priorité " + p + " roundtrip", p, restored.getPriority());
+        }
+    }
+
+    static void testFromJsonBackwardCompatNoPriority() {
+        section("Priority - rétrocompatibilité sans champ priority → MEDIUM");
+
+        // JSON ancien format sans champ priority
+        String oldJson = "{\"id\":1,\"title\":\"Old task\",\"description\":\"desc\",\"dueDate\":\"2025-06-01\",\"status\":\"TODO\"}";
+        Task t = Task.fromJson(oldJson);
+        assertEquals("priority MEDIUM par défaut", Task.Priority.MEDIUM, t.getPriority());
+    }
+
+    static void testAddTaskWithPriority() throws java.io.IOException {
+        section("TaskManager - addTask avec priorité explicite");
+
+        java.nio.file.Path f = tmpFile();
+        TaskManager tm = new TaskManager(f.toString());
+
+        Task t = tm.addTask("T", "d", java.time.LocalDate.now(), Task.Status.TODO, Task.Priority.HIGH);
+        assertEquals("priorité HIGH", Task.Priority.HIGH, t.getPriority());
+
+        java.nio.file.Files.deleteIfExists(f);
+    }
+
+    static void testAddTaskDefaultPriority() throws java.io.IOException {
+        section("TaskManager - addTask sans priorité → MEDIUM");
+
+        java.nio.file.Path f = tmpFile();
+        TaskManager tm = new TaskManager(f.toString());
+
+        Task t = tm.addTask("T", "d", java.time.LocalDate.now(), Task.Status.TODO);
+        assertEquals("priorité MEDIUM par défaut", Task.Priority.MEDIUM, t.getPriority());
+
+        java.nio.file.Files.deleteIfExists(f);
+    }
+
+    static void testUpdateTaskPriorityOnly() throws java.io.IOException {
+        section("TaskManager - updateTask priorité seulement");
+
+        java.nio.file.Path f = tmpFile();
+        TaskManager tm = new TaskManager(f.toString());
+        tm.addTask("T", "d", java.time.LocalDate.now(), Task.Status.TODO, Task.Priority.LOW);
+
+        tm.updateTask(1, null, null, null, null, Task.Priority.HIGH);
+        assertEquals("priorité mise à jour", Task.Priority.HIGH, tm.findTaskById(1).get().getPriority());
+        assertEquals("statut inchangé", Task.Status.TODO, tm.findTaskById(1).get().getStatus());
+
+        java.nio.file.Files.deleteIfExists(f);
+    }
+
+    static void testPriorityPersistedAcrossReload() throws java.io.IOException {
+        section("Priority - persistence après reload");
+
+        java.nio.file.Path f = tmpFile();
+        TaskManager tm1 = new TaskManager(f.toString());
+        tm1.addTask("High", "d", java.time.LocalDate.now(), Task.Status.TODO, Task.Priority.HIGH);
+        tm1.addTask("Low",  "d", java.time.LocalDate.now(), Task.Status.DONE, Task.Priority.LOW);
+
+        TaskManager tm2 = new TaskManager(f.toString());
+        assertEquals("HIGH préservé", Task.Priority.HIGH, tm2.findTaskById(1).get().getPriority());
+        assertEquals("LOW préservé",  Task.Priority.LOW,  tm2.findTaskById(2).get().getPriority());
+
+        java.nio.file.Files.deleteIfExists(f);
+    }
+
+    // Tests Export CSV
+    
+    static void testCsvHeader() throws java.io.IOException {
+        section("CSV - en-tête correct");
+
+        java.nio.file.Path f = tmpFile();
+        TaskManager tm = new TaskManager(f.toString());
+        String csv = tm.exportCsv();
+
+        assertTrue("en-tête CSV", csv.startsWith("id,title,description,dueDate,status,priority\n"));
+
+        java.nio.file.Files.deleteIfExists(f);
+    }
+
+    static void testCsvEmptyList() throws java.io.IOException {
+        section("CSV - liste vide → juste l'en-tête");
+
+        java.nio.file.Path f = tmpFile();
+        TaskManager tm = new TaskManager(f.toString());
+        String csv = tm.exportCsv();
+
+        assertEquals("CSV vide = en-tête seul",
+            "id,title,description,dueDate,status,priority\n", csv);
+
+        java.nio.file.Files.deleteIfExists(f);
+    }
+
+    static void testCsvRow() throws java.io.IOException {
+        section("CSV - ligne correcte pour une tâche simple");
+
+        java.nio.file.Path f = tmpFile();
+        TaskManager tm = new TaskManager(f.toString());
+        tm.addTask("Ma tâche", "desc", java.time.LocalDate.of(2026, 6, 15), Task.Status.DOING, Task.Priority.HIGH);
+
+        String csv = tm.exportCsv();
+        assertTrue("ID dans CSV",       csv.contains("1,"));
+        assertTrue("titre dans CSV",    csv.contains("Ma tâche"));
+        assertTrue("date dans CSV",     csv.contains("2026-06-15"));
+        assertTrue("statut dans CSV",   csv.contains("DOING"));
+        assertTrue("priorité dans CSV", csv.contains("HIGH"));
+
+        java.nio.file.Files.deleteIfExists(f);
+    }
+
+    static void testCsvEscapesCommaInTitle() throws java.io.IOException {
+        section("CSV - virgule dans le titre → guillemets");
+
+        java.nio.file.Path f = tmpFile();
+        TaskManager tm = new TaskManager(f.toString());
+        tm.addTask("Titre, avec virgule", "desc", java.time.LocalDate.now(), Task.Status.TODO, Task.Priority.LOW);
+
+        String csv = tm.exportCsv();
+        assertTrue("titre avec virgule entre guillemets",
+            csv.contains("\"Titre, avec virgule\""));
+
+        java.nio.file.Files.deleteIfExists(f);
+    }
+
+    static void testCsvEscapesQuotesInTitle() throws java.io.IOException {
+        section("CSV - guillemets dans le titre → double-guillemets");
+
+        java.nio.file.Path f = tmpFile();
+        TaskManager tm = new TaskManager(f.toString());
+        tm.addTask("Titre avec \"guillemets\"", "desc", java.time.LocalDate.now(), Task.Status.TODO, Task.Priority.MEDIUM);
+
+        String csv = tm.exportCsv();
+        assertTrue("guillemets doublés dans CSV",
+            csv.contains("\"Titre avec \"\"guillemets\"\"\""));
+
+        java.nio.file.Files.deleteIfExists(f);
+    }
+
+    static void testCsvMultipleTasks() throws java.io.IOException {
+        section("CSV - plusieurs tâches = plusieurs lignes");
+
+        java.nio.file.Path f = tmpFile();
+        TaskManager tm = new TaskManager(f.toString());
+        tm.addTask("A", "d1", java.time.LocalDate.now(), Task.Status.TODO,  Task.Priority.LOW);
+        tm.addTask("B", "d2", java.time.LocalDate.now(), Task.Status.DOING, Task.Priority.MEDIUM);
+        tm.addTask("C", "d3", java.time.LocalDate.now(), Task.Status.DONE,  Task.Priority.HIGH);
+
+        String[] lines = tm.exportCsv().split("\n");
+        assertEquals("4 lignes (en-tête + 3 tâches)", 4, lines.length);
+
+        java.nio.file.Files.deleteIfExists(f);
+    }
+
     // Point d'entrée
 
     public static void main(String[] args) throws IOException {
@@ -702,6 +891,26 @@ public class TaskManagerTest {
         // Corner cases - intégrité
         testGetAllTasksIsDefensiveCopy();
         testJsonFileValidAfterEachOperation();
+
+
+        // Tests Priority
+        testParsePriorityValidValues();
+        testParsePriorityIgnoresCase();
+        testParsePriorityInvalid();
+        testJsonRoundtripWithPriority();
+        testFromJsonBackwardCompatNoPriority();
+        testAddTaskWithPriority();
+        testAddTaskDefaultPriority();
+        testUpdateTaskPriorityOnly();
+        testPriorityPersistedAcrossReload();
+
+        // Tests CSV
+        testCsvHeader();
+        testCsvEmptyList();
+        testCsvRow();
+        testCsvEscapesCommaInTitle();
+        testCsvEscapesQuotesInTitle();
+        testCsvMultipleTasks();
 
         // Résumé
         System.out.println("\n  ========================================");
