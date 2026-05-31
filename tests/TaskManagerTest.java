@@ -21,7 +21,7 @@ public class TaskManagerTest {
     }
 
     private static void fail(String testName, String reason) {
-        System.out.printf("  [FAIL] %s - %s%n", testName, reason);
+        System.out.printf("  [FAIL] %s — %s%n", testName, reason);
         failed++;
     }
 
@@ -54,7 +54,7 @@ public class TaskManagerTest {
     // Tests Task.toJson / Task.fromJson
     
     static void testJsonRoundtrip() {
-        section("Task - sérialisation JSON");
+        section("Task — sérialisation JSON");
 
         Task original = new Task(1, "Titre simple", "Description", LocalDate.of(2025, 6, 1), Task.Status.TODO);
         Task restored = Task.fromJson(original.toJson());
@@ -367,7 +367,7 @@ public class TaskManagerTest {
     }
 
     // Corner cases - affichage
-
+    
     static void testTableRowTruncation() {
         section("Corner - troncature toTableRow");
 
@@ -376,23 +376,23 @@ public class TaskManagerTest {
         Task t = new Task(1, longTitle, longDesc, LocalDate.now(), Task.Status.TODO);
         String row = t.toTableRow();
 
-        // Le titre est tronqué à 30 chars (27 + "...")
-        assertTrue("titre tronqué dans la ligne", row.contains("AAAAAAAAAAAAAAAAAAAAAAAAAAA..."));
-        // La description est tronquée à 40 chars (37 + "...")
-        assertTrue("description tronquée dans la ligne", row.contains("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB..."));
+        // Le titre est tronqué à 28 chars (25 + "...")
+        assertTrue("titre tronqué dans la ligne", row.contains("AAAAAAAAAAAAAAAAAAAAAAAAA..."));
+        // La description est tronquée à 38 chars (35 + "...")
+        assertTrue("description tronquée dans la ligne", row.contains("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB..."));
     }
 
     static void testTableRowExactLength() {
         section("Corner - toTableRow sans troncature si longueur exacte");
 
-        String title30 = "T".repeat(30);
-        String desc40  = "D".repeat(40);
-        Task t = new Task(1, title30, desc40, LocalDate.now(), Task.Status.DOING);
+        String title28 = "T".repeat(28);
+        String desc38  = "D".repeat(38);
+        Task t = new Task(1, title28, desc38, LocalDate.now(), Task.Status.DOING);
         String row = t.toTableRow();
 
-        assertTrue("titre exact non tronqué", row.contains(title30));
-        assertTrue("desc exacte non tronquée", row.contains(desc40));
-        assertFalse("pas de ... si longueur exacte", row.contains(title30 + "..."));
+        assertTrue("titre exact non tronqué", row.contains(title28));
+        assertTrue("desc exacte non tronquée", row.contains(desc38));
+        assertFalse("pas de ... si longueur exacte", row.contains(title28 + "..."));
     }
 
     static void testDetailCardMultiDigitId() {
@@ -446,7 +446,7 @@ public class TaskManagerTest {
         Files.deleteIfExists(f);
     }
 
-    // Corner cases - suppression et IDs
+    // Corner cases — suppression et IDs
     
     static void testDeleteAllThenReload() throws IOException {
         section("Corner - supprimer toutes les tâches puis recharger");
@@ -616,7 +616,7 @@ public class TaskManagerTest {
     }
 
     // Corner cases - JSON produit valide après chaque opération
-
+    
     static void testJsonFileValidAfterEachOperation() throws IOException {
         section("Corner - fichier JSON valide après add/update/delete enchaînés");
 
