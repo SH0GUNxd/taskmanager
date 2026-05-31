@@ -21,7 +21,7 @@ public class TaskManagerTest {
     }
 
     private static void fail(String testName, String reason) {
-        System.out.printf("  [FAIL] %s — %s%n", testName, reason);
+        System.out.printf("  [FAIL] %s - %s%n", testName, reason);
         failed++;
     }
 
@@ -54,7 +54,7 @@ public class TaskManagerTest {
     // Tests Task.toJson / Task.fromJson
     
     static void testJsonRoundtrip() {
-        section("Task — sérialisation JSON");
+        section("Task - sérialisation JSON");
 
         Task original = new Task(1, "Titre simple", "Description", LocalDate.of(2025, 6, 1), Task.Status.TODO);
         Task restored = Task.fromJson(original.toJson());
@@ -446,7 +446,7 @@ public class TaskManagerTest {
         Files.deleteIfExists(f);
     }
 
-    // Corner cases — suppression et IDs
+    // Corner cases - suppression et IDs
     
     static void testDeleteAllThenReload() throws IOException {
         section("Corner - supprimer toutes les tâches puis recharger");
