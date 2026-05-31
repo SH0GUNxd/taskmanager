@@ -273,11 +273,136 @@ body {
 }
 .search-box input::placeholder { color: var(--text3); }
 
+/* View toggle */
+.view-toggle {
+  display: flex;
+  gap: 2px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 3px;
+  margin-left: 8px;
+}
+.view-btn {
+  width: 30px;
+  height: 26px;
+  border: none;
+  background: transparent;
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text3);
+  transition: background .12s, color .12s;
+}
+.view-btn.active { background: var(--accent-dim); color: var(--accent); }
+.view-btn:hover:not(.active) { background: var(--surface2); color: var(--text); }
+.view-btn svg { width: 14px; height: 14px; }
+
 /* Task list */
 .task-list {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+/* Kanban */
+.kanban-board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+.kanban-col {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  min-height: 200px;
+  transition: border-color .15s;
+}
+.kanban-col.drag-over { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-dim); }
+.kanban-col-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.kanban-col-title {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.kanban-col-title.c-accent { color: var(--accent); }
+.kanban-col-title.c-amber  { color: var(--amber);  }
+.kanban-col-title.c-green  { color: var(--green);  }
+.kanban-count {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text3);
+  background: var(--surface2);
+  padding: 1px 7px;
+  border-radius: 10px;
+}
+.kanban-cards {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 80px;
+}
+.kanban-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  cursor: grab;
+  transition: border-color .15s, box-shadow .15s, transform .15s;
+  animation: slideIn .18s ease both;
+}
+.kanban-card:hover { border-color: var(--border2); box-shadow: var(--shadow); }
+.kanban-card.dragging { opacity: .35; transform: scale(.97); border-color: var(--accent); }
+.kanban-card:active { cursor: grabbing; }
+.kanban-card-title {
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+.kanban-card-title.done { text-decoration: line-through; color: var(--text3); }
+.kanban-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.kanban-card-date {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text3);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.kanban-card-date svg { width: 10px; height: 10px; }
+.kanban-card-date.overdue { color: var(--red); }
+.kanban-card-actions {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity .15s;
+}
+.kanban-card:hover .kanban-card-actions { opacity: 1; }
+.kanban-empty {
+  text-align: center;
+  padding: 20px;
+  color: var(--text3);
+  font-size: 12px;
+  font-family: var(--mono);
 }
 
 .task-card {
@@ -641,6 +766,14 @@ body {
         <button class="filter-btn"        data-status="DONE"    onclick="setFilter('DONE', this)">Done</button>
         <button class="filter-btn"        data-status="overdue" onclick="setFilter('overdue', this)">Retard</button>
       </div>
+      <div class="view-toggle">
+        <button class="view-btn active" id="btn-list" onclick="setView('list')" title="Vue liste">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        </button>
+        <button class="view-btn" id="btn-kanban" onclick="setView('kanban')" title="Vue Kanban">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="17" y="3" width="5" height="15" rx="1"/></svg>
+        </button>
+      </div>
       <div class="search-box">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input type="text" id="search-input" placeholder="Rechercher…" oninput="renderTasks()">
@@ -649,6 +782,40 @@ body {
 
     <!-- Task list -->
     <div class="task-list" id="task-list"></div>
+
+    <!-- Kanban board -->
+    <div class="kanban-board" id="kanban-board" style="display:none">
+      <div class="kanban-col" id="col-TODO"
+           ondragover="onKanbanColDragOver(event,'TODO')"
+           ondragleave="onKanbanColDragLeave(event)"
+           ondrop="onKanbanColDrop(event,'TODO')">
+        <div class="kanban-col-header">
+          <span class="kanban-col-title c-accent">Todo</span>
+          <span class="kanban-count" id="kcnt-TODO">0</span>
+        </div>
+        <div class="kanban-cards" id="kcards-TODO"></div>
+      </div>
+      <div class="kanban-col" id="col-DOING"
+           ondragover="onKanbanColDragOver(event,'DOING')"
+           ondragleave="onKanbanColDragLeave(event)"
+           ondrop="onKanbanColDrop(event,'DOING')">
+        <div class="kanban-col-header">
+          <span class="kanban-col-title c-amber">En cours</span>
+          <span class="kanban-count" id="kcnt-DOING">0</span>
+        </div>
+        <div class="kanban-cards" id="kcards-DOING"></div>
+      </div>
+      <div class="kanban-col" id="col-DONE"
+           ondragover="onKanbanColDragOver(event,'DONE')"
+           ondragleave="onKanbanColDragLeave(event)"
+           ondrop="onKanbanColDrop(event,'DONE')">
+        <div class="kanban-col-header">
+          <span class="kanban-col-title c-green">Terminé</span>
+          <span class="kanban-count" id="kcnt-DONE">0</span>
+        </div>
+        <div class="kanban-cards" id="kcards-DONE"></div>
+      </div>
+    </div>
 
   </main>
 </div>
@@ -706,7 +873,9 @@ let tasks        = [];
 let activeFilter = 'all';
 let editingId    = null;
 let pendingDelete = null;
-let dragSrcIdx   = null;
+let dragSrcIdx      = null;
+let currentView     = 'list';
+let kanbanDragId    = null;
 
 // API helpers
 async function apiFetch(path, opts = {}) {
@@ -778,6 +947,7 @@ function filteredTasks() {
 }
 
 function renderTasks() {
+  if (currentView === 'kanban') { renderKanban(); return; }
   const list = document.getElementById('task-list');
   const filtered = filteredTasks();
 
@@ -1037,6 +1207,110 @@ function formatDate(iso) {
 function tomorrow() {
   const d = new Date(); d.setDate(d.getDate() + 1);
   return d.toISOString().slice(0, 10);
+}
+
+// View toggle
+function setView(view) {
+  currentView = view;
+  document.getElementById('task-list').style.display    = view === 'list'   ? 'flex'  : 'none';
+  document.getElementById('kanban-board').style.display = view === 'kanban' ? 'grid'  : 'none';
+  document.getElementById('btn-list').classList.toggle('active',   view === 'list');
+  document.getElementById('btn-kanban').classList.toggle('active', view === 'kanban');
+  // Filters don't apply in kanban (all tasks shown by status column)
+  document.querySelector('.filter-group').style.opacity = view === 'kanban' ? '.4' : '1';
+  document.querySelector('.filter-group').style.pointerEvents = view === 'kanban' ? 'none' : '';
+  renderTasks();
+}
+
+// Kanban render
+function renderKanban() {
+  const q = document.getElementById('search-input').value.toLowerCase().trim();
+  const statuses = ['TODO', 'DOING', 'DONE'];
+
+  for (const status of statuses) {
+    const col   = document.getElementById('kcards-' + status);
+    const count = document.getElementById('kcnt-' + status);
+    const filtered = tasks.filter(t => {
+      const matchStatus = t.status === status;
+      const matchSearch = !q || t.title.toLowerCase().includes(q) || (t.description||'').toLowerCase().includes(q);
+      return matchStatus && matchSearch;
+    });
+
+    count.textContent = filtered.length;
+
+    if (!filtered.length) {
+      col.innerHTML = '<div class="kanban-empty">Aucune tâche</div>';
+      continue;
+    }
+
+    col.innerHTML = filtered.map(t => {
+      const overdue   = isOverdue(t);
+      const dateClass = overdue ? 'kanban-card-date overdue' : 'kanban-card-date';
+      const dateStr   = t.dueDate ? formatDate(t.dueDate) : '—';
+      return `
+      <div class="kanban-card" draggable="true"
+           data-id="${t.id}"
+           ondragstart="onKanbanCardDragStart(event,${t.id})"
+           ondragend="onKanbanCardDragEnd(event)">
+        <div class="kanban-card-title ${t.status === 'DONE' ? 'done' : ''}">${escHtml(t.title)}</div>
+        <div class="kanban-card-meta">
+          <span class="${dateClass}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            ${dateStr}
+          </span>
+          <div class="kanban-card-actions">
+            <button class="icon-btn" onclick="openModal(${t.id})" title="Modifier">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button class="icon-btn delete" onclick="confirmDelete(${t.id})" title="Supprimer">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+}
+
+// Kanban drag & drop (between columns = change status)
+function onKanbanCardDragStart(e, id) {
+  kanbanDragId = id;
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function onKanbanCardDragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+}
+
+function onKanbanColDragOver(e, status) {
+  e.preventDefault();
+  document.getElementById('col-' + status).classList.add('drag-over');
+}
+
+function onKanbanColDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+
+async function onKanbanColDrop(e, newStatus) {
+  e.preventDefault();
+  document.getElementById('col-' + newStatus).classList.remove('drag-over');
+  if (!kanbanDragId) return;
+
+  const t = tasks.find(t => t.id === kanbanDragId);
+  if (!t || t.status === newStatus) { kanbanDragId = null; return; }
+
+  try {
+    await apiFetch('/tasks/' + kanbanDragId, {
+      method: 'PUT',
+      body: JSON.stringify({ status: newStatus })
+    });
+    toast('Déplacé vers ' + newStatus, 'accent');
+    await load();
+  } catch (err) {
+    toast(err.message, 'red');
+  }
+  kanbanDragId = null;
 }
 
 // Boot
