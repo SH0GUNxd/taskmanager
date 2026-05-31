@@ -31,6 +31,7 @@ public class ApiServer {
     private final TaskManager manager;
     private final int         port;
     private final Path        webRoot;
+    private HttpServer        httpServer;
 
     public ApiServer(TaskManager manager, int port, String webRootPath) {
         this.manager = manager;
@@ -39,16 +40,20 @@ public class ApiServer {
     }
 
     public void start() throws IOException {
-        HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
+        httpServer = HttpServer.create(new InetSocketAddress(port), 0);
 
-        server.createContext("/api/tasks", this::handleTasks);
-        server.createContext("/api/stats", this::handleStats);
-        server.createContext("/",          this::handleStatic);
+        httpServer.createContext("/api/tasks", this::handleTasks);
+        httpServer.createContext("/api/stats", this::handleStats);
+        httpServer.createContext("/",          this::handleStatic);
 
-        server.setExecutor(null);
-        server.start();
+        httpServer.setExecutor(null);
+        httpServer.start();
 
         System.out.println("[INFO] Serveur démarré sur http://localhost:" + port);
+    }
+
+    public void stop() {
+        if (httpServer != null) httpServer.stop(0);
     }
 
     // /api/tasks - dispatch selon méthode et présence d'un ID dans l'URL
@@ -195,7 +200,7 @@ public class ApiServer {
         respondJson(ex, 200, json);
     }
 
-    // Fichiers statiques — sert web/index.html
+    // Fichiers statiques - sert web/index.html
     
     private void handleStatic(HttpExchange ex) throws IOException {
         String uriPath = ex.getRequestURI().getPath();
