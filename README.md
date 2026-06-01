@@ -47,7 +47,9 @@ taskmanager/
 │   ├── TaskManagerTest.java   129 assertions - logique métier
 │   └── ApiServerTest.java      88 assertions - intégration HTTP
 ├── web/
-│   └── index.html             frontend single-file (HTML + CSS + JS)
+│   ├── index.html             structure HTML
+│   ├── style.css              styles (dark mode, kanban, animations)
+│   └── app.js                 logique frontend (API calls, render, drag & drop)
 ├── assets/
 │   └── welcome.png            screenshot
 ├── .github/workflows/ci.yml   CI GitHub Actions
